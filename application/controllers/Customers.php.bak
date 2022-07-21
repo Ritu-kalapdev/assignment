@@ -1,0 +1,112 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+
+class Customers extends CI_Controller {
+
+	public function __construct()
+	{
+		parent::__construct();
+		$this->load->model('customers_model','customers');
+	}
+
+	public function index()
+	{
+		$this->load->helper('url');
+	    $countries = $this->customers->get_countries();
+	    $companies = $this->customers->get_companies();
+		$data['countries'] = $countries;
+		$data['companies'] = $companies;
+        $this->load->view('customers_view', $data);
+	}
+	
+	public function monthly()
+	{
+		$this->load->helper('url');
+	    $countries = $this->customers->get_countries();
+	    $companies = $this->customers->get_companies();
+		$data['countries'] = $countries;
+		$data['companies'] = $companies;
+        $this->load->view('monthly_view', $data);
+	}
+
+	public function ajax_list()
+	{
+		$search = array();
+		$search['to'] = $_POST['to'];
+		$search['from'] = $_POST['from'];
+		$search['country'] = $_POST['country'];
+		$search['company'] = $_POST['company'];
+		$list = $this->customers->get_datatables($search);
+		//$list = $this->customers->get_monthly($search);
+		
+		$data = array();
+		$no = $_POST['start'];
+		
+		foreach ($list as $customers) {
+			$percent = $customers->connected / $customers->total_test; 
+            $total_percentage = number_format( $percent * 100, 2 ) . '%';
+			$no++;
+			$row = array();
+			$row[] = $no;
+			$row[] = $customers->country_name;
+			$row[] = $customers->day;
+			$row[] = $customers->name;
+			$row[] = $customers->total_test;
+			$row[] = $customers->failed;
+			$row[] = $total_percentage;
+			$row[] = $customers->diff_in_seconds." sec";
+
+			$data[] = $row;
+		}
+
+		$output = array(
+						"draw" => $_POST['draw'],
+						"recordsTotal" => $this->customers->count_all(),
+						"recordsFiltered" => $this->customers->count_filtered($search),
+						"data" => $data,
+				);
+		//output to json format
+		echo json_encode($output);
+	}
+	
+	public function ajax_list1()
+	{
+		$search = array();
+		$search['to'] = $_POST['to'];
+		$search['from'] = $_POST['from'];
+		$search['country'] = $_POST['country'];
+		$search['company'] = $_POST['company'];
+		//$list = $this->customers->get_datatables($search);
+		$list = $this->customers->get_monthly($search);
+		
+		$data = array();
+		$no = $_POST['start'];
+		
+		foreach ($list as $customers) {
+			$percent = $customers->connected / $customers->total_test; 
+            $total_percentage = number_format( $percent * 100, 2 ) . '%';
+			$no++;
+			$row = array();
+			$row[] = $no;
+			$row[] = $customers->country_name;
+			$row[] = $customers->month;
+			$row[] = $customers->name;
+			$row[] = $customers->total_test;
+			$row[] = $customers->failed;
+			$row[] = $total_percentage;
+			$row[] = $customers->diff_in_seconds." sec";
+
+			$data[] = $row;
+		}
+
+		$output = array(
+						"draw" => $_POST['draw'],
+						"recordsTotal" => $this->customers->count_all(),
+						"recordsFiltered" => $this->customers->count_filtered($search),
+						"data" => $data,
+				);
+		//output to json format
+		echo json_encode($output);
+	}
+
+}
